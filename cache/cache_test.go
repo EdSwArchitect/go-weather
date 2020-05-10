@@ -50,3 +50,19 @@ func TestInsertFeatures(t *testing.T) {
 
 	InsertFeatures("features", features)
 }
+
+func TestFeatureContains(t *testing.T) {
+	Initialize("http://localhost:9200")
+
+	v := ContainsFeature("KCRG")
+
+	if !v {
+		t.Errorf("Should have found 'KCRG' in the index")
+	}
+
+	v = ContainsFeature("edwinfailed")
+
+	if v {
+		t.Errorf("Should NOT have found 'edwinfailed' in the index")
+	}
+}
