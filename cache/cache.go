@@ -116,6 +116,46 @@ func Contains(stationId string) bool {
 	return e.Count == 1
 }
 
+// Contains - the station id is contained in the cache
+func ContainsFeature(ID string) bool {
+
+	var buf bytes.Buffer
+	query := map[string]interface{}{
+		"query": map[string]interface{}{
+			"match": map[string]interface{}{
+				"_id": ID,
+			},
+		},
+	}
+
+	err := json.NewEncoder(&buf).Encode(query)
+
+	if err != nil {
+		log.Fatalf("Error encoding query: %s", err)
+	}
+
+	// Perform the search request.
+	res, err := es.Count(
+		es.Count.WithContext(context.Background()),
+		es.Count.WithIndex("features"),
+		es.Count.WithBody(&buf),
+	)
+	if err != nil {
+		log.Fatalf("Error getting response: %s", err)
+	}
+	defer res.Body.Close()
+
+	var e CountResult
+
+	err = json.NewDecoder(res.Body).Decode(&e)
+
+	if err != nil {
+		log.Fatalf("Error decoding: %s", err)
+	}
+
+	return e.Count == 1
+}
+
 func InsertStations(index string, stations weather.Stations) {
 
 	bi, err := esutil.NewBulkIndexer(esutil.BulkIndexerConfig{

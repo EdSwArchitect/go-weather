@@ -175,11 +175,5 @@ func GetFeatures() ([]Feature, error) {
 		return nil, err
 	}
 
-	// log.Printf("Features length: %d", len(features.Features))
-	// log.Printf("--\n%+v\n---", features.Features)
-
-	// fmt.Printf("Size of observations: %d\n", len(w.ObservationStations))
-	// fmt.Printf("The feature: %+v\n", w)
-
 	return features.Features, nil
 }
