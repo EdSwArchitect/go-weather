@@ -1,12 +1,20 @@
 package cache
 
 import (
+	"log"
 	"testing"
 
 	"github.com/EdSwArchitect/go-weather/weather"
 )
 
+func init() {
+	log.Printf("init")
+}
+
 func TestCache(t *testing.T) {
+
+	log.Println("TestCache")
+
 	Initialize("http://localhost:9200")
 
 	stations, err := weather.GetObservationStations()
@@ -14,6 +22,8 @@ func TestCache(t *testing.T) {
 	if err != nil {
 		t.Errorf("Failed Getting stations. %+v\n", err)
 	}
+
+	log.Printf("****** Stations length: %d", len(stations.ObservationStations))
 
 	InsertStations("stations", stations)
 
@@ -24,6 +34,9 @@ func TestCache(t *testing.T) {
 }
 
 func TestContains(t *testing.T) {
+
+	log.Println("TestContains")
+
 	Initialize("http://localhost:9200")
 
 	v := Contains("KCRG")
@@ -40,6 +53,9 @@ func TestContains(t *testing.T) {
 }
 
 func TestInsertFeatures(t *testing.T) {
+
+	log.Println("TestInsertFeatures")
+
 	Initialize("http://localhost:9200")
 
 	features, err := weather.GetFeatures()
@@ -52,12 +68,15 @@ func TestInsertFeatures(t *testing.T) {
 }
 
 func TestFeatureContains(t *testing.T) {
+
+	log.Println("TestFeatureContains")
+
 	Initialize("http://localhost:9200")
 
-	v := ContainsFeature("KCRG")
+	v := ContainsFeature("KEFK")
 
 	if !v {
-		t.Errorf("Should have found 'KCRG' in the index")
+		t.Errorf("Should have found 'KEFK' in the index")
 	}
 
 	v = ContainsFeature("edwinfailed")

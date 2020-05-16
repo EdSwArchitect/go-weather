@@ -78,6 +78,7 @@ func ParseWeather(jayson string) (Feature, error) {
 
 }
 
+// GetObservationStations ....
 func GetObservationStations() (Stations, error) {
 	client := resty.New()
 
@@ -86,6 +87,9 @@ func GetObservationStations() (Stations, error) {
 	var stations Stations
 
 	if err != nil {
+
+		log.Printf("Getting the stations list failed: %+v", err)
+
 		return stations, err
 	}
 
@@ -105,11 +109,9 @@ func GetObservationStations() (Stations, error) {
 		return s, err
 	}
 
-	// fmt.Printf("Size of observations: %d\n", len(w.ObservationStations))
-	// fmt.Printf("The feature: %+v\n", w)
+	fmt.Printf("Size of observations: %d\n", len(stations.ObservationStations))
 
 	return stations, nil
-
 }
 
 func GetStations() (string, error) {

@@ -168,6 +168,7 @@ func InsertStations(index string, stations weather.Stations) {
 
 	if err != nil {
 		log.Fatalf("Unable to create bulk indexer: %s", err)
+		return
 	}
 
 	var countSuccessful uint64
@@ -182,14 +183,15 @@ func InsertStations(index string, stations weather.Stations) {
 		idx := strings.LastIndex(station, "/")
 
 		stationRune := []rune(station)
-		theId := string(stationRune[idx+1:])
+		theID := string(stationRune[idx+1:])
 
 		err = bi.Add(
 			context.Background(),
 			esutil.BulkIndexerItem{
 				Action:     "index",
-				DocumentID: theId,
+				DocumentID: theID,
 				Body:       strings.NewReader(b.String()),
+
 				// OnSuccess is called for each successful operation
 				OnSuccess: func(ctx context.Context, item esutil.BulkIndexerItem, res esutil.BulkIndexerResponseItem) {
 					atomic.AddUint64(&countSuccessful, 1)
