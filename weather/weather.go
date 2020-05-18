@@ -71,8 +71,23 @@ type FB struct {
 // ParseWeather function
 func ParseWeather(jayson string) (Feature, error) {
 
-	fmt.Printf("Parsing feature:\n%s\n----\n", jayson)
+	// fmt.Printf("Parsing feature:\n%s\n----\n", jayson)
 	var feature Feature
+
+	err := json.Unmarshal([]byte(jayson), &feature)
+
+	if err != nil {
+		return feature, err
+	}
+
+	return feature, nil
+
+}
+
+// ParseFeatureCollection function
+func ParseFeatureCollection(jayson string) (FeatureCollection, error) {
+
+	var feature FeatureCollection
 
 	err := json.Unmarshal([]byte(jayson), &feature)
 
@@ -116,7 +131,7 @@ func GetObservationStations() (Stations, error) {
 		return s, err
 	}
 
-	fmt.Printf("Size of observations: %d\n", len(stations.ObservationStations))
+	// fmt.Printf("Size of observations: %d\n", len(stations.ObservationStations))
 
 	return stations, nil
 }
@@ -139,24 +154,20 @@ func GetStations() (string, error) {
 		return "", fmt.Errorf("Status code returned: %d", resp.StatusCode())
 	}
 
-	fmt.Printf("%s\n", resp)
+	// fmt.Printf("%s\n", resp)
 
-	var w Feature
+	// var w Feature
 
-	w, err = ParseWeather(resp.String())
+	// w, err = ParseWeather(resp.String())
 
-	if err != nil {
-		fmt.Printf("Error parsing json\n")
-	}
+	// if err != nil {
+	// 	fmt.Printf("Error parsing json\n")
+	// }
 
-	fmt.Printf("The id: %+s\n", w.ID)
-
-	// fmt.Printf("Size of observations: %d\n", len(w.ObservationStations))
-	// fmt.Printf("The feature: %+v\n", w)
-
-	return "Success", nil
+	return resp.String(), nil
 }
 
+// GetFeatures get the weather features
 func GetFeatures() ([]Feature, error) {
 	// https://api.weather.gov/stations
 

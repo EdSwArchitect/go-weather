@@ -12,12 +12,23 @@ import (
 
 func heartBeat(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
-	fmt.Fprint(w, "OK")
+	fmt.Println("OK")
 }
 
 func getStations(w http.ResponseWriter, r *http.Request) {
+	theStations, err := weather.GetObservationStations()
+
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Header().Add("content-type", "text/plain; charset=utf-8")
+		fmt.Fprintf(w, "%s\n", err)
+		return
+	}
+
 	w.WriteHeader(http.StatusOK)
-	fmt.Fprint(w, "getStations()")
+	w.Header().Add("content-type", "application/json; charset=utf-8")
+
+	fmt.Fprintf(w, "%s", theStations.ObservationStations)
 }
 
 func getStation(w http.ResponseWriter, r *http.Request) {
@@ -79,9 +90,19 @@ func getFeature(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	b, err := json.Marshal(feature)
+
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Header().Add("content-type", "text/plain; charset=utf-8")
+		fmt.Fprintf(w, "Unable to marshal station information")
+		return
+	}
+
 	w.WriteHeader(http.StatusOK)
 	w.Header().Add("content-type", "application/json; charset=utf-8")
-	fmt.Fprintf(w, "%+v\n", feature)
+
+	fmt.Fprintf(w, "%s", string(b))
 }
 
 func main() {
