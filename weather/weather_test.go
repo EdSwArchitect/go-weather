@@ -65,3 +65,25 @@ func TestUrlCall(t *testing.T) {
 
 	fmt.Printf("The results size is: %d\n", len(ans.ObservationStations))
 }
+
+func TestWeatherFeature(t *testing.T) {
+	feature, err := GetFeature(`KBOI`)
+
+	if err != nil {
+		t.Errorf("Error getting feature KBOI. %+v\n", err)
+	}
+
+	fmt.Printf("The feature: %+v\n", feature)
+
+}
+
+func TestNoWeatherFeature(t *testing.T) {
+	feature, err := GetFeature(`Goober`)
+
+	if err == nil {
+		t.Error("Found a feature for 'GOOBER', and that should not be")
+	}
+
+	fmt.Printf("The feature: %+v\n", feature)
+
+}

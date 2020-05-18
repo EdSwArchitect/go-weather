@@ -2,7 +2,6 @@ package weather
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log"
 
@@ -23,12 +22,15 @@ type Elevation struct {
 
 // Properties type
 type Properties struct {
-	ID           string    `json:"@id"`
-	Type         string    `json:"@type"`
-	TheElevation Elevation `json:"elevation"`
-	StationID    string    `json:"stationIdentifier"`
-	Name         string    `json:"name"`
-	TimeZone     string    `json:"timeZone"`
+	ID              string    `json:"@id"`
+	Type            string    `json:"@type"`
+	TheElevation    Elevation `json:"elevation"`
+	StationID       string    `json:"stationIdentifier"`
+	Name            string    `json:"name"`
+	TimeZone        string    `json:"timeZone"`
+	Forecast        string    `json:"forecast"`
+	County          string    `json:"county"`
+	FireWeatherZone string    `json:"fireWeatherZone"`
 }
 
 // Weather type
@@ -40,6 +42,7 @@ type Weather struct {
 	ObservationStations []string   `json:"observationStations"`
 }
 
+// Feature The weather feature
 type Feature struct {
 	ID    string     `json:"id"`
 	Type  string     `json:"type"`
@@ -47,16 +50,19 @@ type Feature struct {
 	Props Properties `json:"properties"`
 }
 
+// Stations The stations
 type Stations struct {
 	ObservationStations []string
 }
 
+// FeatureCollection the feature collection
 type FeatureCollection struct {
 	Type                string    `json:"type"`
 	Features            []Feature `json:"features"`
 	ObservationStations Stations  `json:"observationStations"`
 }
 
+// FB a type....
 type FB struct {
 	Type     string    `json:"type"`
 	Features []Feature `json:"features"`
@@ -96,7 +102,8 @@ func GetObservationStations() (Stations, error) {
 	fmt.Printf("Status code of call: %d\n", resp.StatusCode())
 
 	if resp.StatusCode() != 200 {
-		return stations, errors.New(fmt.Sprintf("Status code returned: %d", resp.StatusCode()))
+
+		return stations, fmt.Errorf("Status code returned: %d", resp.StatusCode())
 	}
 
 	// fmt.Printf("%s\n", resp)
@@ -114,6 +121,7 @@ func GetObservationStations() (Stations, error) {
 	return stations, nil
 }
 
+// GetStations get the stations
 func GetStations() (string, error) {
 	// https://api.weather.gov/stations
 
@@ -128,7 +136,7 @@ func GetStations() (string, error) {
 	fmt.Printf("Status code of call: %d\n", resp.StatusCode())
 
 	if resp.StatusCode() != 200 {
-		return "", errors.New(fmt.Sprintf("Status code returned: %d", resp.StatusCode()))
+		return "", fmt.Errorf("Status code returned: %d", resp.StatusCode())
 	}
 
 	fmt.Printf("%s\n", resp)
@@ -163,7 +171,7 @@ func GetFeatures() ([]Feature, error) {
 	// fmt.Printf("Status code of call: %d\n", resp.StatusCode())
 
 	if resp.StatusCode() != 200 {
-		return nil, errors.New(fmt.Sprintf("Status code returned: %d", resp.StatusCode()))
+		return nil, fmt.Errorf("Status code returned: %d", resp.StatusCode())
 	}
 
 	// fmt.Printf("%s\n", resp)
@@ -178,4 +186,36 @@ func GetFeatures() ([]Feature, error) {
 	}
 
 	return features.Features, nil
+}
+
+// GetFeature for the station ID
+func GetFeature(stationID string) (Feature, error) {
+	// https://api.weather.gov/stations
+
+	client := resty.New()
+
+	resp, err := client.R().Get(fmt.Sprintf("https://api.weather.gov/stations/%s", stationID))
+
+	if err != nil {
+		return Feature{}, err
+	}
+
+	// fmt.Printf("Status code of call: %d\n", resp.StatusCode())
+
+	if resp.StatusCode() != 200 {
+		return Feature{}, fmt.Errorf("Status code returned: %d", resp.StatusCode())
+	}
+
+	// fmt.Printf("%s\n", resp)
+
+	var feature Feature
+
+	err = json.Unmarshal([]byte(resp.String()), &feature)
+
+	if err != nil {
+		log.Printf("Failed unmarshalling into features %s", err)
+		return Feature{}, err
+	}
+
+	return feature, nil
 }
