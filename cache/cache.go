@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
+	"net/http"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -16,6 +18,7 @@ import (
 	"github.com/elastic/go-elasticsearch/v8/esutil"
 )
 
+// Shards structure
 type Shards struct {
 	Total      int64 `json:"total"`
 	Successful int64 `json:"successful"`
@@ -23,6 +26,7 @@ type Shards struct {
 	Failed     int64 `json:"failed"`
 }
 
+// CountResult structure
 type CountResult struct {
 	Count     int64  `json:"count"`
 	ShardInfo Shards `json:"_shards"`
@@ -74,14 +78,36 @@ func Initialize(host string) {
 
 }
 
+// IndexCount get the index document count
+func IndexCount(index string) (int64, error) {
+
+	resp, err := http.Get(fmt.Sprintf("%s/%s/_count", esHost, index))
+
+	if err != nil {
+		return 0, err
+	}
+
+	var countResult CountResult
+
+	defer resp.Body.Close()
+
+	err = json.NewDecoder(resp.Body).Decode(&countResult)
+
+	if err != nil {
+		return 0, err
+	}
+
+	return countResult.Count, nil
+}
+
 // Contains - the station id is contained in the cache
-func Contains(stationId string) bool {
+func Contains(stationID string) bool {
 
 	var buf bytes.Buffer
 	query := map[string]interface{}{
 		"query": map[string]interface{}{
 			"match": map[string]interface{}{
-				"_id": stationId,
+				"_id": stationID,
 			},
 		},
 	}
@@ -116,7 +142,7 @@ func Contains(stationId string) bool {
 	return e.Count == 1
 }
 
-// Contains - the station id is contained in the cache
+// ContainsFeature - the station id is contained in the cache
 func ContainsFeature(ID string) bool {
 
 	var buf bytes.Buffer
@@ -156,6 +182,7 @@ func ContainsFeature(ID string) bool {
 	return e.Count == 1
 }
 
+// InsertStations inserts the stations into the Elastic index
 func InsertStations(index string, stations weather.Stations) {
 
 	bi, err := esutil.NewBulkIndexer(esutil.BulkIndexerConfig{
@@ -240,6 +267,7 @@ func InsertStations(index string, stations weather.Stations) {
 
 }
 
+// InsertFeatures into the Elastic index
 func InsertFeatures(index string, features []weather.Feature) {
 
 	bi, err := esutil.NewBulkIndexer(esutil.BulkIndexerConfig{
@@ -272,13 +300,14 @@ func InsertFeatures(index string, features []weather.Feature) {
 		idx := strings.LastIndex(feature.ID, "/")
 
 		stationRune := []rune(feature.ID)
-		theId := string(stationRune[idx+1:])
+
+		theID := string(stationRune[idx+1:])
 
 		err = bi.Add(
 			context.Background(),
 			esutil.BulkIndexerItem{
 				Action:     "index",
-				DocumentID: theId,
+				DocumentID: theID,
 				Body:       strings.NewReader(b.String()),
 				// OnSuccess is called for each successful operation
 				OnSuccess: func(ctx context.Context, item esutil.BulkIndexerItem, res esutil.BulkIndexerResponseItem) {
