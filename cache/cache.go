@@ -267,6 +267,171 @@ func InsertStations(index string, stations weather.Stations) {
 
 }
 
+// InsertStations inserts the stations into the Elastic index
+func InsertStationList(index string, stations []string) {
+
+	bi, err := esutil.NewBulkIndexer(esutil.BulkIndexerConfig{
+		Client:        es,
+		Index:         index,
+		NumWorkers:    4,
+		FlushBytes:    5e+6,
+		FlushInterval: 30 * time.Second,
+	})
+
+	if err != nil {
+		log.Fatalf("Unable to create bulk indexer: %s", err)
+		return
+	}
+
+	var countSuccessful uint64
+
+	for _, station := range stations {
+
+		var b strings.Builder
+		b.WriteString(`{"station" : "`)
+		b.WriteString(station)
+		b.WriteString(`"}`)
+
+		idx := strings.LastIndex(station, "/")
+
+		stationRune := []rune(station)
+		theID := string(stationRune[idx+1:])
+
+		err = bi.Add(
+			context.Background(),
+			esutil.BulkIndexerItem{
+				Action:     "index",
+				DocumentID: theID,
+				Body:       strings.NewReader(b.String()),
+
+				// OnSuccess is called for each successful operation
+				OnSuccess: func(ctx context.Context, item esutil.BulkIndexerItem, res esutil.BulkIndexerResponseItem) {
+					atomic.AddUint64(&countSuccessful, 1)
+				},
+
+				// OnFailure is called for each failed operation
+				OnFailure: func(ctx context.Context, item esutil.BulkIndexerItem, res esutil.BulkIndexerResponseItem, err error) {
+					if err != nil {
+						log.Printf("ERROR: %s", err)
+					} else {
+						log.Printf("ERROR: %s: %s", res.Error.Type, res.Error.Reason)
+					}
+				},
+			},
+		)
+
+		if err != nil {
+			log.Printf("Error bulk indexing: %s\n", err)
+			return
+		}
+	} // for _, station := range stations.ObservationStations {
+
+	if err = bi.Close(context.Background()); err != nil {
+
+		log.Fatalf("Some fatal error: %s", err)
+	}
+
+	biStats := bi.Stats()
+
+	// Report the results: number of indexed docs, number of errors, duration, indexing rate
+	//
+	log.Println(strings.Repeat("▔", 65))
+
+	if biStats.NumFailed > 0 {
+		log.Fatalf(
+			"Indexed [%s] documents with [%s] errors",
+			humanize.Comma(int64(biStats.NumFlushed)),
+			humanize.Comma(int64(biStats.NumFailed)),
+		)
+	} else {
+		log.Printf(
+			"Sucessfuly indexed [%s] documents",
+			humanize.Comma(int64(biStats.NumFlushed)),
+		)
+	}
+
+}
+
+// GetStationList inserts the stations into the Elastic index
+func GetStationList(index string) ([]string, error) {
+
+	var buf bytes.Buffer
+
+	// query := `{
+	// 	"query": {
+	// 		"match_all": {}
+	// 	}
+	// }`
+
+	query := map[string]interface{}{
+		"query": map[string]interface{}{
+			"match_all": map[string]interface{}{},
+		},
+	}
+
+	err := json.NewEncoder(&buf).Encode(query)
+
+	if err != nil {
+		return nil, err
+	}
+
+	// Perform the search request.
+	res, err := es.Search(
+		es.Search.WithContext(context.Background()),
+		es.Search.WithIndex(index),
+		es.Search.WithBody(&buf),
+		es.Search.WithTrackTotalHits(true),
+		es.Search.WithPretty(),
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer res.Body.Close()
+
+	if res.IsError() {
+		var e map[string]interface{}
+		if err := json.NewDecoder(res.Body).Decode(&e); err != nil {
+			return nil, err
+		} else {
+			// Print the response status and error information.
+			return nil, fmt.Errorf("[%s] %s: %s", res.Status(), e["error"].(map[string]interface{})["type"], e["error"].(map[string]interface{})["reason"])
+
+		}
+	}
+
+	var r map[string]interface{}
+
+	if err := json.NewDecoder(res.Body).Decode(&r); err != nil {
+		return nil, err
+	}
+
+	fmt.Printf("hits is: %v\n", r["hits"])
+
+	// int(r["hits"])
+
+	stations := make([]string, 1)
+
+	//   // Print the response status, number of results, and request duration.
+	//   log.Printf(
+	// 	"[%s] %d hits; took: %dms",
+	// 	res.Status(),
+	// 	int(r["hits"].(map[string]interface{})["total"].(map[string]interface{})["value"].(float64)),
+	// 	int(r["took"].(float64)),
+	//   )
+
+	// Print the ID and document source for each hit.
+	for _, hit := range r["hits"].(map[string]interface{})["hits"].([]interface{}) {
+		// stations[i] = fmt.Sprintf("%s", hit.(map[string]interface{})["_source"])
+
+		stations = append(stations, fmt.Sprintf("%s", hit.(map[string]interface{})["_source"]))
+
+	}
+
+	fmt.Printf("The stations returned: %+v", stations)
+
+	return stations, nil
+}
+
 // InsertFeatures into the Elastic index
 func InsertFeatures(index string, features []weather.Feature) {
 

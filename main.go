@@ -6,9 +6,14 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/EdSwArchitect/go-weather/cache"
 	"github.com/EdSwArchitect/go-weather/weather"
 	"github.com/gorilla/mux"
 )
+
+func init() {
+	cache.Initialize("localhost:9200")
+}
 
 func heartBeat(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
@@ -16,19 +21,34 @@ func heartBeat(w http.ResponseWriter, r *http.Request) {
 }
 
 func getStations(w http.ResponseWriter, r *http.Request) {
-	theStations, err := weather.GetObservationStations()
+
+	count, err := cache.IndexCount("stations")
 
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
+		w.WriteHeader(http.StatusInternalServerError)
 		w.Header().Add("content-type", "text/plain; charset=utf-8")
 		fmt.Fprintf(w, "%s\n", err)
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
-	w.Header().Add("content-type", "application/json; charset=utf-8")
+	if count == 0 {
 
-	fmt.Fprintf(w, "%s", theStations.ObservationStations)
+		theStations, err := weather.GetObservationStations()
+
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			w.Header().Add("content-type", "text/plain; charset=utf-8")
+			fmt.Fprintf(w, "%s\n", err)
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		w.Header().Add("content-type", "application/json; charset=utf-8")
+
+		fmt.Fprintf(w, "%s", theStations.ObservationStations)
+	} else {
+		cache.GetStations()
+	}
 }
 
 func getStation(w http.ResponseWriter, r *http.Request) {

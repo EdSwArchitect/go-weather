@@ -11,6 +11,7 @@ func init() {
 	log.Printf("init")
 }
 
+// TestCache test caching
 func TestCache(t *testing.T) {
 
 	log.Println("TestCache")
@@ -84,4 +85,14 @@ func TestFeatureContains(t *testing.T) {
 	if v {
 		t.Errorf("Should NOT have found 'edwinfailed' in the index")
 	}
+}
+
+func TestStationsCache(t *testing.T) {
+	stations, err := GetStationList("stations")
+
+	if err != nil {
+		t.Errorf("Failed getting list of stations from cache: %+v\n", err)
+	}
+
+	log.Printf("Stations size: %d\n%v\n", len(stations), stations)
 }
