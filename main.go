@@ -47,7 +47,8 @@ func getStations(w http.ResponseWriter, r *http.Request) {
 
 		fmt.Fprintf(w, "%s", theStations.ObservationStations)
 	} else {
-		cache.GetStations()
+//		cache.GetStations()
+		cache.GetStationList("stations")
 	}
 }
 
