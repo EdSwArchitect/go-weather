@@ -382,6 +382,7 @@ func GetStationList(index string) ([]string, error) {
 		es.Search.WithIndex(index),
 		es.Search.WithBody(&buf),
 		es.Search.WithTrackTotalHits(true),
+		es.Search.WithSize(10000),
 		es.Search.WithPretty(),
 	)
 	if err != nil {
