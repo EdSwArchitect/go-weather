@@ -47,8 +47,25 @@ func getStations(w http.ResponseWriter, r *http.Request) {
 
 		fmt.Fprintf(w, "%s", theStations.ObservationStations)
 	} else {
-//		cache.GetStations()
-		cache.GetStationList("stations")
+		//		cache.GetStations()
+		stations, err := cache.GetStationList("stations")
+
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Header().Add("content-type", "text/plain; charset=utf-8")
+			fmt.Fprintf(w, "%s\n", err)
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		w.Header().Add("content-type", "application/json; charset=utf-8")
+
+		for _, station := range stations {
+			fmt.Fprintf(w, "%s\n", station)
+		}
+
+		// fmt.Fprintf(w, "%s", stations)
+
 	}
 }
 

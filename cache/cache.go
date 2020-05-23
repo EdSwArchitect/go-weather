@@ -81,7 +81,7 @@ func Initialize(host string) {
 // IndexCount get the index document count
 func IndexCount(index string) (int64, error) {
 
-	resp, err := http.Get(fmt.Sprintf("%s/%s/_count", esHost, index))
+	resp, err := http.Get(fmt.Sprintf("http://%s/%s/_count", esHost, index))
 
 	if err != nil {
 		return 0, err
@@ -354,6 +354,7 @@ func InsertStationList(index string, stations []string) {
 
 // GetStationList inserts the stations into the Elastic index
 func GetStationList(index string) ([]string, error) {
+	// func GetStationList(index string) ([]map[string]string, error) {
 
 	var buf bytes.Buffer
 
@@ -405,11 +406,12 @@ func GetStationList(index string) ([]string, error) {
 		return nil, err
 	}
 
-	fmt.Printf("hits is: %v\n", r["hits"])
+	// fmt.Printf("hits is: %v\n", r["hits"])
 
 	// int(r["hits"])
 
 	stations := make([]string, 1)
+	// stations := make([]map[string]string, 1)
 
 	//   // Print the response status, number of results, and request duration.
 	//   log.Printf(
@@ -423,11 +425,49 @@ func GetStationList(index string) ([]string, error) {
 	for _, hit := range r["hits"].(map[string]interface{})["hits"].([]interface{}) {
 		// stations[i] = fmt.Sprintf("%s", hit.(map[string]interface{})["_source"])
 
-		stations = append(stations, fmt.Sprintf("%s", hit.(map[string]interface{})["_source"]))
+		// var m map[string]interface{}
+
+		var m interface{}
+
+		m = hit.(map[string]interface{})["_source"]
+
+		switch dd := m.(type) {
+
+		case map[string]interface{}:
+			// fmt.Printf("map[string]interface{}: %s\n", dd)
+
+			for _, v := range dd {
+				// fmt.Printf("\t\tKey: %s. Value: %s  -- ", k, v)
+
+				s, ok := v.(string)
+
+				if ok {
+					// fmt.Println("string")
+
+					stations = append(stations, s)
+
+				} else {
+					_, ok = v.(interface{})
+					if ok {
+						fmt.Println(" and interface{}")
+					}
+				}
+
+			}
+
+		case map[string]string:
+			// fmt.Printf("map[string]string: %s\n", dd)
+		default:
+			// fmt.Println("Something else")
+		}
+
+		// fmt.Printf("*** %v ***: %s\n-----\n", reflect.TypeOf(m), m)
+
+		// stations = append(stations, fmt.Sprintf("%s", hit.(map[string]interface{})["_source"]))
 
 	}
 
-	fmt.Printf("The stations returned: %+v", stations)
+	// fmt.Printf("The stations returned: %+v", stations)
 
 	return stations, nil
 }
