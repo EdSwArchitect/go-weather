@@ -2,17 +2,55 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"log"
 	"net/http"
 
 	"github.com/EdSwArchitect/go-weather/cache"
+	"github.com/EdSwArchitect/go-weather/config"
 	"github.com/EdSwArchitect/go-weather/weather"
 	"github.com/gorilla/mux"
 )
 
+var espUri string
+var configFile string
+var featuresURI string
+var stationsURI string
+var httpPort int
+
 func init() {
-	cache.Initialize("localhost:9200")
+
+	flag.StringVar(&espUri, "espUri", "localhost:9200", "The ESP host and port number")
+	flag.IntVar(&httpPort, "serverPort", 8080, "The HTTP server port")
+	flag.StringVar(&configFile, "configFile", "", "The configuration file")
+
+	flag.Parse()
+
+	if configFile != "" {
+		log.Printf("Working with log file: %s", configFile)
+
+		config, err := config.ReadConfig(&configFile)
+
+		if err != nil {
+			log.Fatalf("Configuration failed: %s", err)
+		}
+
+		espUri = config.EspURI
+		featuresURI = config.FeaturesURI
+		stationsURI = config.StationsURI
+		httpPort = config.ServerPort
+
+	}
+
+	log.Printf("espURI: %s", espUri)
+	log.Printf("configFile: %s", configFile)
+	log.Printf("featuresURI: %s", featuresURI)
+	log.Printf("stationsURI: %s", stationsURI)
+	log.Printf("httpPort: %d", httpPort)
+
+	// cache.Initialize("localhost:9200")
+	cache.Initialize(espUri)
 }
 
 func heartBeat(w http.ResponseWriter, r *http.Request) {
@@ -152,5 +190,5 @@ func main() {
 	router.HandleFunc("/station/{stationId}", getStation)
 	router.HandleFunc("/feature/{stationId}", getFeature)
 
-	log.Fatal(http.ListenAndServe(":8080", router))
+	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", httpPort), router))
 }

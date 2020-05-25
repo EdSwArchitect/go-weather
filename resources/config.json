@@ -1,0 +1,6 @@
+{
+	"espUri" : "weather-es-svc:9200",
+	"stationsIndex" : "stations",
+        "serverPort" : 18080,
+	"featuresIndex"	 : "features"
+}

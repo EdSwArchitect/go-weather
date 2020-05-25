@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: weather-configmap
+  labels:
+    app: weather-configmap
+spec:
+  containers:
+  - image: edswarchitect/go-weather
+    name: weather
+    volumeMounts:
+    - name: weather-data-configmap
+      mountPath: /data
+      readOnly: true
+    ports:
+    - containerPort: 8080
+      protocol: TCP
+    - containerPort: 18080
+      protocol: TCP
+  volumes:
+  - name: weather-data-configmap
+    configMap:
+      name: weather-config

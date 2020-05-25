@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: weather-es-svc
+spec:
+  type: LoadBalancer
+  ports:
+  - name: http # http defined in pod file
+    port: 9200
+    targetPort: 9200
+  - name: transport
+    port: 9300
+    targetPort: 9300
+  selector:
+    app: weather-elasticsearch

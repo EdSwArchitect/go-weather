@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: weather-configmap-svc
+spec:
+  type: LoadBalancer
+  ports:
+  - name: http # http defined in pod file
+    port: 8080
+    targetPort: 8080
+  - name: http2 # http defined in pod file
+    port: 18080
+    targetPort: 18080
+  selector:
+    app: weather-configmap

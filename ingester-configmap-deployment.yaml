@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ingester-configmap
+spec:
+  selector:
+    matchLabels:
+      app: ingester-configmap
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: ingester-configmap
+    spec:
+      volumes:
+        - name: ingester-data-configmap
+          configMap:
+            name: ingester-config
+      containers:
+      - name: ingester
+        image: edswarchitect/k8s-ingester
+        volumeMounts:
+        - mountPath: /data
+          name: ingester-data-configmap
+          readOnly: true
+        ports:
+        - containerPort: 9080
+          protocol: TCP
+

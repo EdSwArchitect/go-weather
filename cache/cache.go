@@ -43,10 +43,17 @@ func Initialize(host string) {
 	retryBackoff := backoff.NewExponentialBackOff()
 
 	var err error
+	var theAddress string
+
+	if !strings.HasPrefix(host, "http://") {
+		theAddress = fmt.Sprintf("http://%s", host)
+	} else {
+		theAddress = host
+	}
 
 	es, err = elasticsearch.NewClient(elasticsearch.Config{
 		Addresses: []string{
-			"http://localhost:9200",
+			theAddress,
 		},
 
 		RetryOnStatus: []int{502, 503, 504, 429},
@@ -65,8 +72,7 @@ func Initialize(host string) {
 	})
 
 	if err != nil {
-		log.Printf("Failed getting connection to elastic: %+v", err)
-		return
+		log.Fatalf("Failed getting connection to elastic: %+v", err)
 	}
 
 	res, err := es.Info()
