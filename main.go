@@ -107,6 +107,25 @@ func getStations(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func loadStations(w http.ResponseWriter, r *http.Request) {
+
+	theStations, err := weather.GetObservationStations()
+
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Header().Add("content-type", "text/plain; charset=utf-8")
+		fmt.Fprintf(w, "%s\n", err)
+		return
+	}
+
+	cache.InsertStationList(stationsURI, theStations.ObservationStations)
+
+	w.WriteHeader(http.StatusOK)
+	w.Header().Add("content-type", "text/plain; charset=utf-8")
+
+	fmt.Fprint(w, "OK")
+}
+
 func getStation(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
@@ -141,6 +160,20 @@ func getStation(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("content-type", "application/json; charset=utf-8")
 
 	fmt.Fprintf(w, "%s", string(b))
+}
+
+func loadFeatures(w http.ResponseWriter, r *http.Request) {
+
+	features, err := weather.GetFeatures()
+
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Header().Add("content-type", "text/plain; charset=utf-8")
+		fmt.Fprintf(w, "Unable to marshal feature information. %s", err)
+		return
+	}
+
+	cache.InsertFeatures(featuresURI, features)
 }
 
 func getFeature(w http.ResponseWriter, r *http.Request) {
@@ -187,7 +220,9 @@ func main() {
 
 	router.HandleFunc("/", heartBeat)
 	router.HandleFunc("/stations", getStations)
+	router.HandleFunc("/loadStations", loadStations)
 	router.HandleFunc("/station/{stationId}", getStation)
+	router.HandleFunc("/loadFeatures", loadFeatures)
 	router.HandleFunc("/feature/{stationId}", getFeature)
 
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", httpPort), router))

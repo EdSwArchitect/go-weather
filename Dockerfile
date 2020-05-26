@@ -18,5 +18,5 @@ EXPOSE 8080
 EXPOSE 18080
 VOLUME /data
 
-ENTRYPOINT ["/opt/playground/go-weather", "-configFile", "/static-data/config.json"]
+ENTRYPOINT ["/opt/playground/go-weather", "-configFile", "/data/config.json"]
 

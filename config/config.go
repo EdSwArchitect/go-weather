@@ -18,9 +18,9 @@ import (
 
 type Config struct {
 	EspURI      string `json:"espUri"`
-	StationsURI string `json:"stations"`
+	StationsURI string `json:"stationsIndex"`
 	ServerPort  int    `json:"serverPort"`
-	FeaturesURI string `json:"features"`
+	FeaturesURI string `json:"featuresIndex"`
 }
 
 // ReadConfig read the configuraion file
