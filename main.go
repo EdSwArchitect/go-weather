@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"time"
 
 	"github.com/EdSwArchitect/go-weather/cache"
 	"github.com/EdSwArchitect/go-weather/config"
@@ -214,6 +216,94 @@ func getFeature(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "%s", string(b))
 }
 
+func getFeatures(w http.ResponseWriter, r *http.Request) {
+
+	// count, err := cache.IndexCount("features")
+
+	// if err != nil {
+	// 	w.WriteHeader(http.StatusInternalServerError)
+	// 	w.Header().Add("content-type", "text/plain; charset=utf-8")
+	// 	fmt.Fprintf(w, "%s\n", err)
+	// 	return
+	// }
+
+	// if count == 0 {
+
+	theFeatures, err := weather.GetFeatures()
+
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Header().Add("content-type", "text/plain; charset=utf-8")
+		fmt.Fprintf(w, "%s\n", err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Header().Add("content-type", "application/json; charset=utf-8")
+
+	fmt.Fprintf(w, "%v", theFeatures)
+	// } else {
+	//		cache.GetStations()
+	// 	stations, err := cache.
+
+	// 	if err != nil {
+	// 		w.WriteHeader(http.StatusInternalServerError)
+	// 		w.Header().Add("content-type", "text/plain; charset=utf-8")
+	// 		fmt.Fprintf(w, "%s\n", err)
+	// 		return
+	// 	}
+
+	// 	w.WriteHeader(http.StatusOK)
+	// 	w.Header().Add("content-type", "application/json; charset=utf-8")
+
+	// 	for _, station := range stations {
+	// 		fmt.Fprintf(w, "%s\n", station)
+	// 	}
+
+	// 	// fmt.Fprintf(w, "%s", stations)
+
+	// }
+}
+
+func writeStatic(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+
+	fmt.Fprintf(w, "The vars: %+v", vars)
+
+	staticID := vars["staticID"]
+
+	if staticID == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Header().Add("content-type", "text/plain; charset=utf-8")
+		fmt.Fprintf(w, "No staticID given")
+		return
+	}
+
+	file, err := os.Create(fmt.Sprintf("/perm-data/%s", staticID))
+
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Header().Add("content-type", "text/plain; charset=utf-8")
+		fmt.Fprintf(w, "Unable to write file: /perm-data/%s", staticID)
+		return
+	}
+
+	defer file.Close()
+
+	_, err = file.WriteString(fmt.Sprintf("%s: %s", time.Now(), staticID))
+
+	if err != nil {
+		w.WriteHeader(http.StatusNotFound)
+		w.Header().Add("content-type", "text/plain; charset=utf-8")
+		fmt.Fprintf(w, "Unable to write content to file /perm-data/%s", staticID)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Header().Add("content-type", "text/plain; charset=utf-8")
+	fmt.Fprintf(w, "OK")
+}
+
 func main() {
 
 	router := mux.NewRouter()
@@ -224,6 +314,7 @@ func main() {
 	router.HandleFunc("/station/{stationId}", getStation)
 	router.HandleFunc("/loadFeatures", loadFeatures)
 	router.HandleFunc("/feature/{stationId}", getFeature)
+	router.HandleFunc("/writeStatic/{saticID}", writeStatic)
 
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", httpPort), router))
 }

@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "{{ include "weather-workflow.fullname" . }}-test-connection"
+  labels:
+    {{- include "weather-workflow.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": test-success
+spec:
+  containers:
+    - name: wget
+      image: busybox
+      command: ['wget']
+      args: ['{{ include "weather-workflow.fullname" . }}:{{ .Values.service.port }}']
+  restartPolicy: Never

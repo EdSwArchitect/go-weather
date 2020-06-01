@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: weather-stateful
+spec:
+  serviceName: weather
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        app: weather-config
+    spec:
+      containers:
+      - image: edswarchitect/go-weather
+        name: weather
+        volumeMounts:
+        - name: weather-data-configmap
+          mountPath: /data
+          readOnly: true
+        ports:
+        - containerPort: 8080
+          protocol: TCP
+        - containerPort: 18080
+          protocol: TCP
+  volumeClaimTemplates:
+  - metadata:
+      name: storage
+    spec:
+      resources:
+        requests:
+          storage: 5GiB
+      accessModes:
+        - ReadWrieOnce
