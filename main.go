@@ -310,6 +310,7 @@ func main() {
 
 	router.HandleFunc("/", heartBeat)
 	router.HandleFunc("/stations", getStations)
+	router.HandleFunc("/features", getFeatures)
 	router.HandleFunc("/loadStations", loadStations)
 	router.HandleFunc("/station/{stationId}", getStation)
 	router.HandleFunc("/loadFeatures", loadFeatures)
